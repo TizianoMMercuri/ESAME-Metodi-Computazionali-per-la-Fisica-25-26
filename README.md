@@ -1,8 +1,5 @@
 # ESAME-Metodi-Computazionali-per-la-Fisica-25-26
 Il file "tramonti.py" Consiste in uno script python gestito da argparse.
-Scrivendo "python3 tramonti.py -h" si mostrano le due possibilità: -I e -O.
-scrivendo quindi "python3 tramonti.py -I" si entra in menù interattivo che consente all'utente 
-di scegliere inizialmente una stella, successivamente quanti fotoni si vogliono campionare e infine un angolo (compreso tra 90° e -90°) da selezionare
-per lo spessore della massa d'aria. Verranno quindi mostrati degli istogrammi che rappresentano le distribuzioni di fotoni osservate. 
-Infine, viene di nuovo chiesto di inserire un angolo (sempre compreso tra -90° e 90°) che permetterà di mostrare il flusso di fotoni osservato.
-Scrivendo invece "python3 tramonti.py -O", si entra nella parte dedicata all'Ozono. In breve, verrà mostrata un immagine composta di 6 grafici che descrivono l'effetto dell'assorbimento della radiazione da parte dell'Ozono in funzione della lunghezza d'onda e a diverse temperature, con infine un grafico riassuntivo che unisce insieme tutte le curve.  
+Scrivendo **"python3 tramonti.py -h"** si mostrano le due possibilità: -I e -O.
+- scrivendo quindi **"python3 tramonti.py -I"** si entra in menù interattivo che consente all'utente di scegliere inizialmente una stella, successivamente quanti fotoni si vogliono campionare e infine un angolo (compreso tra 90° e -90°) da selezionareper lo spessore della massa d'aria. Verranno quindi mostrati degli istogrammi che rappresentano le distribuzioni di fotoni osservate. Infine, viene di nuovo chiesto di inserire un angolo (sempre compreso tra -90° e 90°) che permetterà di mostrare il flusso di fotoni osservato.
+- Scrivendo invece **"python3 tramonti.py -O"**, si entra nella parte dedicata all'Ozono. In breve, verrà mostrata un immagine composta di 6 grafici che descrivono l'effetto dell'assorbimento della radiazione da parte dell'Ozono in funzione della lunghezza d'onda e a diverse temperature, con infine un grafico riassuntivo che unisce insieme tutte le curve.  
