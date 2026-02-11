@@ -12,10 +12,10 @@ from scipy.constants import c,k,h
 
 n=1.00029# Indice di rifrazione dell'atmosfera terrestre
 N=2.504e25# Densità di molecole dell'atmosfera[mol*m^-3]
-T_s=5.75e3# Temperatura del Sole[k]
-T_a=3.7e3# Temperatura di Antares[k]
-T_v=10e3# Temperatura di Vega[k]
-T_r=25e3# Temperatura di Rigel[k]
+T_s=5.75e3# Temperatura del Sole[K]
+T_a=3.7e3# Temperatura di Antares[K]
+T_v=10e3# Temperatura di Vega[K]
+T_r=25e3# Temperatura di Rigel[K]
 R_t=6371000# Raggio della Terra [m]
 S_z=8000# Spessore massa d'aria allo zenith [m]
 S_oriz=np.sqrt(np.power(R_t+S_z, 2)-np.power(R_t, 2))# m
@@ -66,8 +66,8 @@ def D(L, T):
     Funzione che descrive la densità di fotoni
     per lunghezza d'onda
     Parametri:
-        L : Lunghezza d'onda del corpo [m]
-        T : Temperatura del corpo
+        L : Lunghezza d'onda [m]
+        T : Temperatura[K]
     
     Restituisce B(L, T)/E, dove E=E_L [fotoni*m^-3*s^-1]
     """
@@ -104,7 +104,7 @@ def N_obs(L, S, T):
     Parametri:
         L : Lunghezza d'onda [m]   
         S : Spessore massa d'aria, lunghezza del percorso in atmosfera [m]
-        T : Temperatura della Stella [k]
+        T : Temperatura della Stella [K]
     
     Restituisce N_0(L)*exp(-beta(L, n, N)*S)
     """
@@ -129,7 +129,7 @@ def hm(L, S, T, Ns):
     Parametri:
         L : Array di lunghezze d'onda [m]
         S : Spessore massa d'aria [m]
-        T : Temperatura della stella [k]
+        T : Temperatura della stella [K]
         Ns : numero di campioni scelto 
         
     Restituisce
@@ -149,10 +149,10 @@ def flusso(L, th, Ns, T):
     Funzione che calcola il flusso relativo di fotoni in funzione dell'angolo
     theta sfruttando il metodo della media
     Parametri:
-        L : Array di lunghezze d'onda che costituiscono gli estremi 
-        th : Angolo che descrive la posizione del Sole rispetto allo Zenith
+        L : Lunghezza d'onda [m]
+        th : Angolo che descrive la posizione del Sole rispetto allo Zenith [rad]
         Ns : Numero di fotoni che si vuole campionare
-        T : Temperatura della Stella [k]
+        T : Temperatura della Stella [K]
     Restituisce il flusso come (L_max-L_min)*media(fotoni)
     """
     if th==np.pi/2:
@@ -254,7 +254,7 @@ def menu_interattivo():
             else:
                 break
         flux=flusso(L_tot, ang_rad, N_fot, T)
-        print("Flusso osservato di fotoni", flux)
+        print("Flusso osservato di fotoni:[fot*s^-1*m^-2]", flux)
 
 
 #definizione della funzione che si occupa dello studio sull'Ozono
