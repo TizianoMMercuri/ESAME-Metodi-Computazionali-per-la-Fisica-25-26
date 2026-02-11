@@ -5,10 +5,14 @@ import matplotlib.cm as cm
 import random
 import pandas as pd
 from scipy.constants import c,k,h   
+
+
 # definizione costanti utili
+
+
 n=1.00029# Indice di rifrazione dell'atmosfera terrestre
 N=2.504e25# Densità di molecole dell'atmosfera[mol*m^-3]
-T_s=5.75e3# Temperatura del Sole nella sua rappresentazione a corpo nero[k]
+T_s=5.75e3# Temperatura del Sole[k]
 T_a=3.7e3# Temperatura di Antares[k]
 T_v=10e3# Temperatura di Vega[k]
 T_r=25e3# Temperatura di Rigel[k]
@@ -16,7 +20,13 @@ R_t=6371000# Raggio della Terra [m]
 S_z=8000# Spessore massa d'aria allo zenith [m]
 S_oriz=np.sqrt(np.power(R_t+S_z, 2)-np.power(R_t, 2))# m
 L_tot=np.linspace(10e-9,3000e-9,10000)# Seleziona 10000 lunghezze d'onda tra 10 e 3000 nm
-def B(L, T):
+
+
+#definizione delle funzioni
+
+
+
+defB(L, T):
     """
     Funzione che descrive la densità di energia irradiata
     da un corpo di temperatura T in funzione 
@@ -152,12 +162,21 @@ def flusso(L, th, Ns, T):
     L_r=np.random.uniform(low=np.min(L),high=np.max(L),size=Ns)
     val=N_obs(L_r, S_m, T)
     return (np.max(L)-np.min(L))*np.mean(val)
+
+
+
+#definizione del menù che gestisce la prima parte del progetto 
+
+
+
 def menu_interattivo():
     """
     Funzione che gestisce il programma: entra in gioco con la selezione mediante ArgParse,
     successivamente fa partire un ciclo while che permette all'utente di scegliere i dati e visualizzare 
     la risposta del programma. I dati sono limitati a quelli presenti nella consegna del progetto
     """
+    #definisco il ciclo while che gestisce il menù
+    
     while True:
         print("\nSelezionare la stella")
         print("S: Sole")
@@ -176,6 +195,11 @@ def menu_interattivo():
         nome,T=stelle[scelta]
         N_f=input("Inserire il numero di fotoni da campionare: ")
         N_fot=int(N_f)
+        
+        
+        #definisco un ciclo while annidato per la selezione e lo scarto degli angoli
+        
+        
         while True:
             S=input("Inserire l'angolo in gradi per lo spessore della massa d'aria: ")
             S_fl=float(S)
@@ -184,6 +208,11 @@ def menu_interattivo():
                 print("Bisogna inserire un angolo tra -90° e 90°")
             else:
                 break
+        
+        
+        #chiamo le funzioni e definisco il caso limite
+        
+        
         hm1=hm(L_tot, 0, T, N_fot)
         hm2=hm(L_tot, S_z, T, N_fot)
         hm3=hm(L_tot, S_oriz, T, N_fot)
@@ -191,6 +220,11 @@ def menu_interattivo():
             hm4=hm(L_tot, S_oriz, T, N_fot)
         else: 
             hm4=hm(L_tot, S_theta(S_rad), T, N_fot)
+        
+        
+        #plotto i grafici delle 4 funzioni
+        
+        
         plt.figure(figsize=(12,8))
         plt.hist(hm1,bins=300,range=((np.min(L_tot)),np.max(L_tot)),color='tomato',alpha=0.8,label="senza assorbimento")
         plt.hist(hm2,bins=300,range=((np.min(L_tot)),np.max(L_tot)),color='gold',alpha=0.8,label="Zenith")
@@ -205,6 +239,11 @@ def menu_interattivo():
         plt.tight_layout()
         plt.show(block=False)
         plt.pause(0.1)
+        
+        
+        #rifaccio un altro ciclo while annidato per poter riscegliere un altro angolo, non necessariamente uguale al primo
+        
+        
         print("\nInserire l'angolo che descrive la posizione della Stella rispetto allo zenith (in gradi):")
         while True:
             ang=input(">>>")
@@ -216,13 +255,29 @@ def menu_interattivo():
                 break
         flux=flusso(L_tot, ang_rad, N_fot, T)
         print("Flusso osservato di fotoni", flux)
+
+
+#definizione della funzione che si occupa dello studio sull'Ozono
+
+
+
 def Stud_O3():
     """
     Funzione che gestisce la parte di studio qualitativo dell'assorbimento dell'Ozono. Partendo da un file 
     che mostra la cross-section in funzione della lunghezza d'onda, mostra un confronto tra le diverse temperature
     """
+    
+    
+    #carico il file come dataframe e rinomino le colonne
+    
+    
     df=pd.read_csv("SCIA_O3_Temp_cross-section_V4.1.DAT",comment="!",sep=r"\s+",header=None)
-    df.columns=["vacuum_wavelength","cross_section_203k","cross_section_223k","cross_section_243k","cross_section_273k","cross_section_293k"]#rinomino le colonne 
+    df.columns=["vacuum_wavelength","cross_section_203k","cross_section_223k","cross_section_243k","cross_section_273k","cross_section_293k"]
+    
+    
+    #Creo la figura che contiene i grafici che mostrano i dati caricati
+    
+    
     fig,axs=plt.subplots(2,3,figsize=(16,8))
     axs[0,0].plot(df["vacuum_wavelength"],df["cross_section_203k"],color="indigo")
     axs[0,0].set_yscale("log")
