@@ -1,7 +1,6 @@
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 import random
 import pandas as pd
 from scipy.constants import c,k,h   
@@ -73,18 +72,18 @@ def D(L, T):
     """
     expo=(h*c)/(L*k*T)
     return (2*h*np.power(c, 2)/np.power(L, 5))*(1/(np.exp(expo)-1))*(L/(h*c))
-def beta(L, n, Nc):
+def beta(L, nc, Nc):
     """
     Funzione che descrive lo scattering di Rayleigh in funzione 
     della lunghezza d'onda, dell'indice di rifrazione e alla densità di molecole 
     Parametri:
         L : Lunghezza d'onda [m]
-        n : Indice di rifrazione 
+        nc : Indice di rifrazione 
         Nc : Densità di molecole [molecole*m^-3]
     
-    Restituisce (8*pi^3/3*L^4*N)*(n^2-1)^2[m^-1]
+    Restituisce (8*pi^3/(3*L^4*N))*(n^2-1)^2[m^-1]
     """
-    return (8*np.pi**3/(3*L**4*N))*(n**2-1)**2  
+    return (8*np.pi**3/(3*L**4*Nc))*(nc**2-1)**2  
 def N_0(L, T):
     """
     Funzione che descrive il numero di fotoni
@@ -282,7 +281,7 @@ def Stud_O3():
     axs[0,0].plot(df["vacuum_wavelength"],df["cross_section_203k"],color="indigo")
     axs[0,0].set_yscale("log")
     axs[0,0].set_xlabel(r"$\lambda$ [nm]")
-    axs[0,0].set_ylabel(r"$\sigma(\lambda)[cm^{-2}$]")
+    axs[0,0].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
     axs[0,0].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
     axs[0,0].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
     axs[0,0].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
@@ -291,7 +290,7 @@ def Stud_O3():
     axs[0,1].plot(df["vacuum_wavelength"],df["cross_section_223k"],color="darkturquoise")
     axs[0,1].set_yscale("log")
     axs[0,1].set_xlabel(r"$\lambda$ [nm]")
-    axs[0,1].set_ylabel(r"$\sigma(\lambda)[cm^{-2}$]")
+    axs[0,1].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
     axs[0,1].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
     axs[0,1].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
     axs[0,1].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
@@ -300,7 +299,7 @@ def Stud_O3():
     axs[0,2].plot(df["vacuum_wavelength"],df["cross_section_243k"],color="darkkhaki")
     axs[0,2].set_yscale("log")
     axs[0,2].set_xlabel(r"$\lambda$ [nm]")
-    axs[0,2].set_ylabel(r"$\sigma(\lambda)[cm^{-2}$]")
+    axs[0,2].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
     axs[0,2].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
     axs[0,2].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
     axs[0,2].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
@@ -309,7 +308,7 @@ def Stud_O3():
     axs[1,0].plot(df["vacuum_wavelength"],df["cross_section_273k"],color="crimson")
     axs[1,0].set_yscale("log")
     axs[1,0].set_xlabel(r"$\lambda$ [nm]")
-    axs[1,0].set_ylabel(r"$\sigma(\lambda)[cm^{-2}$]")
+    axs[1,0].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
     axs[1,0].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
     axs[1,0].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
     axs[1,0].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
@@ -318,7 +317,7 @@ def Stud_O3():
     axs[1,1].plot(df["vacuum_wavelength"],df["cross_section_293k"],color="darkslategray")
     axs[1,1].set_yscale("log")
     axs[1,1].set_xlabel(r"$\lambda$ [nm]")
-    axs[1,1].set_ylabel(r"$\sigma(\lambda)[cm^{-2}$]")
+    axs[1,1].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
     axs[1,1].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
     axs[1,1].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
     axs[1,1].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
@@ -331,7 +330,7 @@ def Stud_O3():
     axs[1,2].plot(df["vacuum_wavelength"],df["cross_section_293k"],color="darkslategray")
     axs[1,2].set_yscale("log")
     axs[1,2].set_xlabel(r"$\lambda$ [nm]")
-    axs[1,2].set_ylabel(r"$\sigma(\lambda)[cm^{-2}$]")
+    axs[1,2].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
     axs[1,2].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
     axs[1,2].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
     axs[1,2].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
