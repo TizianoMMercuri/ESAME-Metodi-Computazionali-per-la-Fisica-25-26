@@ -14,4 +14,4 @@ def main():
     else:
         print("Uscita dal programma...")
 if __name__== "__main__":
-    main()
+    main()#TEST DA TERMINALE
