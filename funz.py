@@ -26,7 +26,7 @@ L_tot=np.linspace(10e-9,3000e-9,10000)# Seleziona 10000 lunghezze d'onda tra 10 
 
 
 
-defB(L, T):
+def B(L, T):
     """
     Funzione che descrive la densità di energia irradiata
     da un corpo di temperatura T in funzione 
