@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import random
 import pandas as pd
 from scipy.constants import c,k,h   
-
+from scipy.interpolate import interp1d
 
 # definizione costanti utili
 
@@ -15,157 +15,168 @@ T_s=5.75e3# Temperatura del Sole[K]
 T_a=3.7e3# Temperatura di Antares[K]
 T_v=10e3# Temperatura di Vega[K]
 T_r=25e3# Temperatura di Rigel[K]
-R_t=6371000# Raggio della Terra [m]
+R_t=6.371e6# Raggio della Terra [m]
 S_z=8000# Spessore massa d'aria allo zenith [m]
 S_oriz=np.sqrt(np.power(R_t+S_z, 2)-np.power(R_t, 2))# m
-L_tot=np.linspace(10e-9,3000e-9,10000)# Seleziona 10000 lunghezze d'onda tra 10 e 3000 nm
+L_tot=np.linspace(10,3000,300)# Seleziona 10000 lunghezze d'onda tra 10 e 3000 nm
+N_fot=500000# Numero dei fotoni che si vanno a campionare
+
+
+#carico il file come dataframe e rinomino le colonne
+
+
+df=pd.read_csv("SCIA_O3_Temp_cross-section_V4.1.DAT",comment="!",sep=r"\s+",header=None)
+df.columns=["vacuum_wavelength","cross_section_203k","cross_section_223k","cross_section_243k","cross_section_273k","cross_section_293k"]
 
 
 #definizione delle funzioni
 
 
 
-def B(L, T):
+def B(T):
     """
     Funzione che descrive la densità di energia irradiata
     da un corpo di temperatura T in funzione 
     della lunghezza d'onda lambda
     
     Parametri:
-        L : Lunghezza d'onda della radiazione EM emessa dal corpo [m]
         T : Temperatura del corpo [K]
     
     Restituisce (2hc^2/L^5)*(1/e^(hc/L*k*T))-1)[J*m^-3*s^-1], con h costante di Planck,
     k costante di Boltzmann e c velocità della luce nel vuoto
     """
-    expo=h*c/(L*k*T)
-    return (2*h*np.power(c, 2)/np.power(L, 5))*(1/(np.exp(expo)-1))
-def E_L(L):
-    """"
-    Funzione che esprime l'energia dei fotoni
-    in funzione della lunghezza d'onda
-    Parametri:
-        L : Lunghezza d'onda dei fotoni [m]
-    
-    Restituisce h*c/L
-    """
-    return (h*c/L)
-def E_nu(nu):
-    """
-    Funzione che esprime l'energia dei fotoni
-    in funzione della frequenza
-    Parametri:
-        nu : Frequenza dei fotoni [s^-1]
-    
-    Restituisce h*nu
-    """
-    return h*nu
+    expo=h*c/((L_tot*1e-9)*k*T)
+    return (2*h*np.power(c, 2)/np.power((L_tot*1e-9), 5))*(1/(np.exp(expo)-1))
 def D(L, T):
     """
     Funzione che descrive la densità di fotoni
     per lunghezza d'onda
+    
     Parametri:
-        L : Lunghezza d'onda [m]
+        L : Lunghezza d'onda [nm]
         T : Temperatura[K]
     
     Restituisce B(L, T)/E, dove E=E_L [fotoni*m^-3*s^-1]
     """
-    expo=(h*c)/(L*k*T)
-    return (2*h*np.power(c, 2)/np.power(L, 5))*(1/(np.exp(expo)-1))*(L/(h*c))
-def beta(L, nc, Nc):
+    L_m=L*1e-9
+    expo=(h*c)/(L_m*k*T)
+    return (2*c)/(L_m**4*(np.exp(expo)-1))
+def beta():
     """
     Funzione che descrive lo scattering di Rayleigh in funzione 
     della lunghezza d'onda, dell'indice di rifrazione e alla densità di molecole 
-    Parametri:
-        L : Lunghezza d'onda [m]
-        nc : Indice di rifrazione 
-        Nc : Densità di molecole [molecole*m^-3]
+    
     
     Restituisce (8*pi^3/(3*L^4*N))*(n^2-1)^2[m^-1]
     """
-    return (8*np.pi**3/(3*L**4*Nc))*(nc**2-1)**2  
-def N_0(L, T):
-    """
-    Funzione che descrive il numero di fotoni
-    iniziali, prima che raggiungano l'atmosfera terrestre: si noti
-    che coincide con la densità di fotoni per lunghezza d'onda 
-    alla temperatura della Stella in esame
-    Parametri:
-        L : Lunghezza d'onda [m]
-    
-    Restituisce D(L, T_Stella)
-    """
-    return D(L, T)
-def N_obs(L, S, T):
+    return (8*np.pi**3/(3*(L_tot*1e-9)**4*N))*(n**2-1)**2  
+def N_obs(S, D):
     """
     Funzione che descrive il numero di fotoni osservati
     ad una certa lunghezza d'onda senza essere stati deviati
-    Parametri:
-        L : Lunghezza d'onda [m]   
-        S : Spessore massa d'aria, lunghezza del percorso in atmosfera [m]
-        T : Temperatura della Stella [K]
     
-    Restituisce N_0(L)*exp(-beta(L, n, N)*S)
+    Parametri:   
+        S : Spessore massa d'aria, lunghezza del percorso in atmosfera [m]
+        D : Numero di conteggi restituiti dal metodo hit or miss
+    
+    Restituisce D*exp(-beta(L, n, N)*S)
     """
-    expo=-beta(L, n, N)*S
-    return N_0(L, T)*np.exp(expo)
+    expo=np.exp(-beta()*S)
+    return D*expo
 def S_theta(th):
     """
     Funzione che approssima lo spessore della massa d'aria 
     considerando un qualsiasi angolo theta
     rispetto allo Zenith 
+    
     Parametri:
         th : Angolo rispetto allo Zenith [rad]
     
     Restituisce sqrt((R_t*cos(th))^2+2*R_t*S_z+S_z^2)-R_t*cos(th)
     """
-    return np.sqrt(np.power(R_t*np.cos(th), 2)+2*R_t*S_z+np.power(S_z, 2))-R_t*np.cos(th)
-def hm(L, S, T, Ns):
+    th_rad=((np.pi*th)/180)
+    return np.sqrt(np.power(R_t*np.cos(th_rad), 2)+2*R_t*S_z+np.power(S_z, 2))-R_t*np.cos(th_rad)
+def hm(T):
     """
     Funzione che definisce il metodo hit or miss
-    per una determinata lunghezza d'onda, il cammino dei fotoni,
-    la temperatura della stella in esame e il numero di campioni
+    
     Parametri:
-        L : Array di lunghezze d'onda [m]
-        S : Spessore massa d'aria [m]
         T : Temperatura della stella [K]
-        Ns : numero di campioni scelto 
-        
-    Restituisce
+    
+    Restituisce un conteggio di fotoni 
     """
-    if S==0:
-        F=N_0(L, T)
-    else:
-        F=N_obs(L, S, T)
-    Fmax=np.max(F)
-    xhm=np.random.uniform(low=np.min(L),high=np.max(L),size=Ns)
-    yhm=np.random.random(Ns)
-    maskhm=yhm<=N_obs(xhm, S, T)/Fmax
+    xhm=np.random.uniform(low=np.min(L_tot),high=np.max(L_tot),size=N_fot)
+    yhm=np.random.random(N_fot)
+    maskhm=yhm<=(D(xhm, T)/D((2898/T)*1000, T))
     xnew=xhm[maskhm]
-    return xnew
-def flusso(L, th, Ns, T):
+    hist=np.histogram(xnew, bins=300, range=(10, 3000))
+    return hist[0]
+def zenith(sam):
+    """
+    Funzione che imposta il metodo hit or miss quando lo spessore d'aria coincide con lo zenith
+    
+    Parametri:
+        sam : conteggio restituito da hm(T) 
+    """
+    zen=N_obs(S_z, sam)
+    return zen
+def oriz(sam):
+    """
+    Funzione che imposta il metodo hit or miss quando lo spessore d'aria coincide con l'orizzonte
+    
+    Parametri:
+        sam : conteggio restituito da hm(T) 
+    """
+    oor=N_obs(S_oriz, sam)
+    return oor
+def phi(sam, th):
+    """
+    Funzione che imposta il metodo hit or miss quando lo spessore d'aria viene rappresentato
+    da un angolo theta
+    
+    Parametri:
+        sam : conteggio restituito da hm(T) 
+        th : angolo [°]
+    """
+    s_phi=S_theta(th)
+    thet=N_obs(s_phi, sam)
+    return thet
+def flusso(sam, th):
     """
     Funzione che calcola il flusso relativo di fotoni in funzione dell'angolo
-    theta sfruttando il metodo della media
+    theta
     Parametri:
-        L : Lunghezza d'onda [m]
-        th : Angolo che descrive la posizione del Sole rispetto allo Zenith [rad]
-        Ns : Numero di fotoni che si vuole campionare
-        T : Temperatura della Stella [K]
-    Restituisce il flusso come (L_max-L_min)*media(fotoni)
+        sam : conteggio restituito da hm(T) 
+        th : Angolo che descrive la posizione del Sole rispetto allo Zenith [°]
+        
+    Restituisce il flusso relativo
     """
-    if th==np.pi/2:
-        S_m=S_oriz
-    else:
-        S_m=S_theta(th)    
-    L_r=np.random.uniform(low=np.min(L),high=np.max(L),size=Ns)
-    val=N_obs(L_r, S_m, T)
-    return (np.max(L)-np.min(L))*np.mean(val)
-
+    theta_th=np.exp(-beta()*S_theta(th))
+    theta_zen=np.exp(-beta()*S_z)
+    flusso_th=np.sum(sam*theta_th)
+    flusso_zen=np.sum(sam*theta_zen)
+    return flusso_th/flusso_zen
+def assorb_O3(L_O3, S, du=300, T_O3=243):
+    """
+    Funzione che imposta l'assorbimento da parte dell'Ozono con i dati che si hanno a disposizione dal file caricato
+    
+    Parametri:
+        L_O3 : Lunghezza d'onda per lo studio[nm]
+        S : Spessore della massa d'aria[m]
+        du : numero che definisce una densità efficace di molecole di O3 nell'atmosfera [DU]
+        T_O3 : Temperatura efficace per l'O3 [K]
+        
+    Restituisce l'assorbimento da parte dell'Ozono 
+    """
+    f=interp1d(df["vacuum_wavelength"], df["cross_section_243k"], kind='linear',fill_value='extrapolate', bounds_error=False)
+    sigma=f(L_O3)
+    sigma_m2=sigma*1e-4
+    col_O3=du*2.69e20
+    col_th=col_O3*(S/S_z)
+    return np.exp(-sigma_m2*col_O3)
 
 
 #definizione del menù che gestisce la prima parte del progetto 
-
 
 
 def menu_interattivo():
@@ -192,150 +203,114 @@ def menu_interattivo():
             print("Scelta non valida")
             continue
         nome,T=stelle[scelta]
-        N_f=input("Inserire il numero di fotoni da campionare: ")
-        N_fot=int(N_f)
         
         
         #definisco un ciclo while annidato per la selezione e lo scarto degli angoli
         
         
         while True:
-            S=input("Inserire l'angolo in gradi per lo spessore della massa d'aria: ")
+            S=input("Inserire l'angolo per lo spessore della massa d'aria: ")
             S_fl=float(S)
-            S_rad=((np.pi*S_fl)/180)
-            if S_rad>np.pi/2 or S_rad<-(np.pi/2):
-                print("Bisogna inserire un angolo tra -90° e 90°")
+            if S_fl>90 or S_fl<0:
+                print("Bisogna inserire un angolo tra 0° e 90°")
             else:
                 break
         
         
-        #chiamo le funzioni e definisco il caso limite
-        
-        
-        hm1=hm(L_tot, 0, T, N_fot)
-        hm2=hm(L_tot, S_z, T, N_fot)
-        hm3=hm(L_tot, S_oriz, T, N_fot)
-        if S_rad==np.pi/2:
-            hm4=hm(L_tot, S_oriz, T, N_fot)
-        else: 
-            hm4=hm(L_tot, S_theta(S_rad), T, N_fot)
-        
-        
         #plotto i grafici delle 4 funzioni
         
-        
+        ph=hm(T)   
+        z=zenith(ph)
+        o=oriz(ph)
+        f=phi(ph, S_fl)
         plt.figure(figsize=(12,8))
-        plt.hist(hm1,bins=300,range=((np.min(L_tot)),np.max(L_tot)),color='tomato',alpha=0.8,label="senza assorbimento")
-        plt.hist(hm2,bins=300,range=((np.min(L_tot)),np.max(L_tot)),color='gold',alpha=0.8,label="Zenith")
-        plt.hist(hm3,bins=300,range=((np.min(L_tot)),np.max(L_tot)),color='g',alpha=0.8,label="Orizzonte")
-        plt.hist(hm4,bins=300,range=((np.min(L_tot)),np.max(L_tot)),color='navy',alpha=0.8,label="Angolo scelto")
-        plt.axvspan(380e-9, 800e-9,facecolor="#B0C4DE",edgecolor="black",alpha=0.25,linewidth=1.2)
-        plt.text((380e-9+800e-9)/2,0.98,"Spettro visibile",ha="center",va="top",fontsize=11,fontstyle="italic",color="black",alpha=0.9,transform=plt.gca().get_xaxis_transform())
+        plt.bar(L_tot, height=ph, width=(L_tot[1]-L_tot[0]), color='indigo', alpha=0.6, label="Nessun assorbimento",linewidth=0.5, edgecolor='black')
+        plt.bar(L_tot, height=z, width=(L_tot[1]-L_tot[0]), color='gold', alpha=0.6, label="Zenith",linewidth=0.5, edgecolor='black')
+        plt.bar(L_tot, height=f, width=(L_tot[1]-L_tot[0]), color='green', alpha=0.6, label="Angolo scelto",linewidth=0.5, edgecolor='black')
+        plt.bar(L_tot, height=o, width=(L_tot[1]-L_tot[0]), color='red', alpha=0.6, label="Orizzonte",linewidth=0.5, edgecolor='black')
         plt.xlabel(r"$\lambda$[m]",fontstyle="italic")
         plt.ylabel("Conteggio",fontstyle="italic")
         plt.title("Distribuzione di fotoni simulata")
         plt.legend()
         plt.tight_layout()
-        plt.show(block=False)
-        plt.pause(0.1)
+        plt.show()
         
         
-        #rifaccio un altro ciclo while annidato per poter riscegliere un altro angolo, non necessariamente uguale al primo
         
+        alpha=np.linspace(0, 90, 91)
+        flux=np.array([flusso(ph, a) for a in alpha])
+        plt.plot(alpha, flux, 'o-', color="orange")
+        plt.xlabel("Angolo[°]")
+        plt.ylabel("Flusso relativo")
+        plt.title("Flusso relativo in funzione dell'angolo tra il Sole e lo Zenith")
+        plt.show()
         
-        print("\nInserire l'angolo che descrive la posizione della Stella rispetto allo zenith (in gradi):")
-        while True:
-            ang=input(">>>")
-            ang_fl=float(ang)
-            ang_rad=((np.pi*ang_fl)/180)
-            if ang_rad>np.pi/2 or ang_rad<-(np.pi/2):
-                print("Bisogna inserire un angolo tra -90° e 90°")
-            else:
-                break
-        flux=flusso(L_tot, ang_rad, N_fot, T)
-        print("Flusso osservato di fotoni:[fot*s^-1*m^-2]", flux)
 
 
 #definizione della funzione che si occupa dello studio sull'Ozono
 
 
-
 def Stud_O3():
     """
-    Funzione che gestisce la parte di studio qualitativo dell'assorbimento dell'Ozono. Partendo da un file 
-    che mostra la cross-section in funzione della lunghezza d'onda, mostra un confronto tra le diverse temperature
+    Studio qualitativo dell'assorbimento dell'Ozono.
+    Aggiunge un quinto istogramma: angolo scelto CON ozono.
     """
+    while True:
+        print("\nSelezionare la stella")
+        print("S: Sole")
+        print("A: Antares")
+        print("V: Vega")
+        print("R: Rigel")
+        print("Q: Uscire dal programma")
+        scelta=input(">>>")
+        if scelta == "Q":
+            print("Fine esecuzione...")
+            break
+        stelle={"S":("Sole", T_s), "A":("Antares", T_a), "V":("Vega", T_v), "R":("Rigel", T_r)}
+        if scelta not in stelle:
+            print("Scelta non valida")
+            continue
+        nome,T=stelle[scelta]
+        du=300
+        T_O3 = 243
+        while True:
+            S=input("Inserire l'angolo per lo spessore della massa d'aria: ")
+            S_fl=float(S)
+            if S_fl>90 or S_fl<0:
+                print("Bisogna inserire un angolo tra 0° e 90°")
+            else:
+                break
+        ph=hm(T)
+        
+        
+        #definizione conteggi di fotoni per solo assorbimento O3
+        
+        
+        assO3_zen=assorb_O3(L_tot, S_z, du, T_O3)
+        assO3_ang=assorb_O3(L_tot, S_theta(S_fl), du, T_O3)
+        assO3_oriz=assorb_O3(L_tot, S_oriz, du, T_O3)
+        
+        
+        #definizione conteggi di fotoni per combo Rayleigh/O3
+        
+        
+        z=zenith(ph)*assO3_zen
+        o=oriz(ph)*assO3_oriz
+        f=phi(ph, S_fl)*assO3_ang
+        
+        
+        #plot del grafico
+        
+        
+        plt.figure(figsize=(14, 8))
+        plt.bar(L_tot, ph, width=(L_tot[1]-L_tot[0]), color='indigo', alpha=0.7, label='Nessun assorbimento', linewidth=0.5, edgecolor='black')
+        plt.bar(L_tot, z, width=(L_tot[1]-L_tot[0]), color='dodgerblue', alpha=0.7, label='Zenith ', linewidth=0.5, edgecolor='black')
+        plt.bar(L_tot, f, width=(L_tot[1]-L_tot[0]), color='limegreen', alpha=0.7, label=f'Angolo scelto', linewidth=0.5, edgecolor='black')
+        plt.bar(L_tot, o, width=(L_tot[1]-L_tot[0]), color='crimson', alpha=0.7, label='Orizzonte ', linewidth=0.5, edgecolor='black')
+        plt.xlabel('Lunghezza d\'onda [nm]', fontsize=12)
+        plt.ylabel('Conteggio ', fontsize=12)
+        plt.title(f'Distribuzione osservata di fotoni con scattering Rayleigh+Assorbimento O3', fontsize=14)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
     
-    
-    #carico il file come dataframe e rinomino le colonne
-    
-    
-    df=pd.read_csv("SCIA_O3_Temp_cross-section_V4.1.DAT",comment="!",sep=r"\s+",header=None)
-    df.columns=["vacuum_wavelength","cross_section_203k","cross_section_223k","cross_section_243k","cross_section_273k","cross_section_293k"]
-    
-    
-    #Creo la figura che contiene i grafici che mostrano i dati caricati
-    
-    
-    fig,axs=plt.subplots(2,3,figsize=(16,8))
-    axs[0,0].plot(df["vacuum_wavelength"],df["cross_section_203k"],color="indigo")
-    axs[0,0].set_yscale("log")
-    axs[0,0].set_xlabel(r"$\lambda$ [nm]")
-    axs[0,0].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
-    axs[0,0].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
-    axs[0,0].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
-    axs[0,0].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
-    axs[0,0].set_title("Sezione d'urto dell'Ozono a 203K")
-    axs[0,0].legend()
-    axs[0,1].plot(df["vacuum_wavelength"],df["cross_section_223k"],color="darkturquoise")
-    axs[0,1].set_yscale("log")
-    axs[0,1].set_xlabel(r"$\lambda$ [nm]")
-    axs[0,1].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
-    axs[0,1].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
-    axs[0,1].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
-    axs[0,1].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
-    axs[0,1].set_title("Sezione d'urto dell'Ozono a 223K")
-    axs[0,1].legend()
-    axs[0,2].plot(df["vacuum_wavelength"],df["cross_section_243k"],color="darkkhaki")
-    axs[0,2].set_yscale("log")
-    axs[0,2].set_xlabel(r"$\lambda$ [nm]")
-    axs[0,2].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
-    axs[0,2].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
-    axs[0,2].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
-    axs[0,2].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
-    axs[0,2].set_title("Sezione d'urto dell'Ozono a 243K")
-    axs[0,2].legend()
-    axs[1,0].plot(df["vacuum_wavelength"],df["cross_section_273k"],color="crimson")
-    axs[1,0].set_yscale("log")
-    axs[1,0].set_xlabel(r"$\lambda$ [nm]")
-    axs[1,0].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
-    axs[1,0].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
-    axs[1,0].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
-    axs[1,0].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
-    axs[1,0].set_title("Sezione d'urto dell'Ozono a 273K")
-    axs[1,0].legend()
-    axs[1,1].plot(df["vacuum_wavelength"],df["cross_section_293k"],color="darkslategray")
-    axs[1,1].set_yscale("log")
-    axs[1,1].set_xlabel(r"$\lambda$ [nm]")
-    axs[1,1].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
-    axs[1,1].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
-    axs[1,1].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
-    axs[1,1].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
-    axs[1,1].set_title("Sezione d'urto dell'Ozono a 293K")
-    axs[1,1].legend()
-    axs[1,2].plot(df["vacuum_wavelength"],df["cross_section_203k"],color="indigo")
-    axs[1,2].plot(df["vacuum_wavelength"],df["cross_section_223k"],color="darkturquoise")
-    axs[1,2].plot(df["vacuum_wavelength"],df["cross_section_243k"],color="darkkhaki")
-    axs[1,2].plot(df["vacuum_wavelength"],df["cross_section_273k"],color="crimson")
-    axs[1,2].plot(df["vacuum_wavelength"],df["cross_section_293k"],color="darkslategray")
-    axs[1,2].set_yscale("log")
-    axs[1,2].set_xlabel(r"$\lambda$ [nm]")
-    axs[1,2].set_ylabel(r"$\sigma(\lambda)[cm^{-2}]$")
-    axs[1,2].axvspan(380,800,facecolor="white",alpha=0.15,edgecolor="black",linewidth=1.2,label="Spettro visibile")
-    axs[1,2].axvspan(np.min(df["vacuum_wavelength"].values),380,color="purple",alpha=0.5,label="Zona UV")
-    axs[1,2].axvspan(800,np.max(df["vacuum_wavelength"].values),color="darkred",alpha=0.5,label="Zona IR")
-    axs[1,2].set_title("Grafico riassuntivo")
-    axs[1,2].legend()
-    plt.tight_layout()
-    plt.show() 
-    return 0
