@@ -173,7 +173,7 @@ def assorb_O3(L_O3, S, du=300, T_O3=243):
     sigma_m2=sigma*1e-4
     col_O3=du*2.69e20
     col_th=col_O3*(S/S_z)
-    return np.exp(-sigma_m2*col_O3)
+    return np.exp(-sigma_m2*col_th)
 
 
 #definizione del menù che gestisce la prima parte del progetto 
