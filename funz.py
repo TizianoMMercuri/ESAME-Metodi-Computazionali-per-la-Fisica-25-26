@@ -228,7 +228,7 @@ def menu_interattivo():
         plt.bar(L_tot, height=z, width=(L_tot[1]-L_tot[0]), color='gold', alpha=0.6, label="Zenith",linewidth=0.5, edgecolor='black')
         plt.bar(L_tot, height=f, width=(L_tot[1]-L_tot[0]), color='green', alpha=0.6, label="Angolo scelto",linewidth=0.5, edgecolor='black')
         plt.bar(L_tot, height=o, width=(L_tot[1]-L_tot[0]), color='red', alpha=0.6, label="Orizzonte",linewidth=0.5, edgecolor='black')
-        plt.xlabel(r"$\lambda$[m]",fontstyle="italic")
+        plt.xlabel(r"$\lambda$[nm]",fontstyle="italic")
         plt.ylabel("Conteggio",fontstyle="italic")
         plt.title("Distribuzione di fotoni simulata")
         plt.legend()
