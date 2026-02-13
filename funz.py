@@ -252,8 +252,8 @@ def menu_interattivo():
 
 def Stud_O3():
     """
-    Studio qualitativo dell'assorbimento dell'Ozono.
-    Aggiunge un quinto istogramma: angolo scelto CON ozono.
+    Funzione che gestisce il menù interattivo per lo studio dell'ozono e l'analisi della combinazione dei due effetti
+    (Rayleigh+O3) sulla radiazione
     """
     while True:
         print("\nSelezionare la stella")
